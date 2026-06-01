@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#F8F9FA">
+<title>Daily Brief · Artitep 2523</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F4F6F9;
+  --surface:#fff;
+  --primary:#1A2740;
+  --muted:#8A9AB0;
+  --muted-light:#C0CCD8;
+  --divider:#E4EAF2;
+  --sales-bg:#FDF8EE;--sales-text:#7A5C10;--sales-dot:#C8920A;
+  --svc-bg:#EBF3FF;--svc-text:#1A4A7A;--svc-dot:#1A5AAA;
+  --r:12px;
+  --sh:0 1px 3px rgba(26,39,64,.06),0 4px 12px rgba(26,39,64,.05);
+  --sh2:0 6px 24px rgba(26,39,64,.11);
+  --font:'Sarabun',sans-serif;
+}
+html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--primary);-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+
+/* ── SHELL ── */
+#app{display:flex;height:100dvh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+#sidebar{
+  width:200px;flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--divider);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#sidebar-head{padding:18px 16px 12px;border-bottom:1px solid var(--divider);flex-shrink:0}
+.sb-brand{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:1.4px;text-transform:uppercase;margin-bottom:5px}
+.sb-date{font-size:18px;font-weight:800;color:var(--primary);letter-spacing:-.3px;line-height:1.15}
+.sb-count{display:inline-flex;align-items:baseline;gap:4px;margin-top:6px;background:var(--svc-bg);border-radius:8px;padding:3px 9px}
+.sb-count .n{font-size:15px;font-weight:800;color:var(--svc-text)}
+.sb-count .l{font-size:9px;color:var(--muted)}
+
+#date-list{flex:1;overflow-y:auto;padding:6px 0 16px;scrollbar-width:none}
+#date-list::-webkit-scrollbar{display:none}
+.di{display:flex;align-items:center;padding:7px 12px 7px 14px;cursor:pointer;transition:background .12s;position:relative;-webkit-tap-highlight-color:transparent}
+.di:active{background:#F0F4F8}
+.di .dow{font-size:10.5px;font-weight:600;color:var(--muted);width:22px;flex-shrink:0}
+.di .dn{font-size:14px;font-weight:700;color:var(--primary);width:24px;flex-shrink:0}
+.di .dt{font-size:10.5px;color:var(--muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:5px}
+.di .dot{width:5px;height:5px;border-radius:50%;background:var(--svc-dot);margin-left:4px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.di.has-ev .dot{opacity:1}
+.di.is-today .dn{color:var(--svc-dot)}
+.di.sel{background:#EBF3FF}
+.di.sel .dn{color:#1A2740;font-weight:800}
+.di.sel::before{content:'';position:absolute;left:0;top:22%;bottom:22%;width:3px;border-radius:0 2px 2px 0;background:#1A2740}
+
+/* ── MAIN ── */
+#main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+
+/* ── SCROLL AREA ── */
+#scroll-area{flex:1;overflow-y:auto;padding:16px 16px 40px;scrollbar-width:none}
+#scroll-area::-webkit-scrollbar{display:none}
+
+/* ── SECTION LABELS ── */
+.sec-label{display:flex;align-items:center;gap:7px;margin-bottom:10px;margin-top:2px}
+.sec-label .sb{width:3px;height:12px;border-radius:2px}
+.sec-label .st{font-size:10px;font-weight:800;letter-spacing:.9px;text-transform:uppercase}
+.sec-label .sc{font-size:9.5px;font-weight:700;padding:1px 7px;border-radius:20px}
+.sec-div{height:1px;background:var(--divider);margin:14px 0 16px}
+
+/* ── CARDS ── */
+.card-wrap{margin-bottom:8px}
+.job-card{
+  background:var(--surface);border-radius:var(--r);
+  padding:14px 16px 12px;box-shadow:var(--sh);
+  border:1px solid var(--divider);cursor:pointer;
+  transition:box-shadow .18s,border-radius .15s;
+  -webkit-tap-highlight-color:transparent;
+  animation:ci .22s ease both;
+}
+.job-card:active{opacity:.85}
+@media(hover:hover){.job-card:hover{box-shadow:var(--sh2)}}
+@keyframes ci{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.job-card.open{border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom-color:transparent}
+.card-title{font-size:14px;font-weight:700;color:var(--primary);line-height:1.3;margin-bottom:5px}
+.card-meta{font-size:12px;color:var(--muted);margin-bottom:8px}
+.card-tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+
+/* ── INLINE DETAIL ── */
+.card-detail{
+  background:var(--surface);border:1px solid var(--divider);border-top:none;
+  border-bottom-left-radius:var(--r);border-bottom-right-radius:var(--r);
+  box-shadow:0 4px 14px rgba(26,39,64,.07);overflow:hidden;
+  animation:detIn .2s ease;
+}
+@keyframes detIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+.det-accent{height:2px}
+.det-inner{padding:11px 16px 14px}
+.det-row{display:flex;gap:14px;padding:8px 0;border-bottom:1px solid #F2F6FA;align-items:flex-start}
+.det-row:last-of-type{border-bottom:none}
+.d-lbl{font-size:10.5px;color:var(--muted);width:72px;flex-shrink:0;padding-top:1px;font-weight:500}
+.d-val{font-size:13px;font-weight:600;color:var(--primary);flex:1;line-height:1.5}
+.det-note{margin-top:10px;background:#F8FAFC;border-radius:9px;padding:10px 12px}
+.dn-lbl{font-size:9.5px;font-weight:700;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;margin-bottom:4px}
+.dn-txt{font-size:12.5px;color:#4A5568;line-height:1.7}
+
+/* ── EMPTY ── */
+.empty-state{text-align:center;padding:48px 0;animation:ci .3s ease}
+.empty-line{width:36px;height:3px;background:var(--divider);border-radius:2px;margin:0 auto 14px}
+.empty-t{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:4px}
+.empty-s{font-size:11.5px;color:var(--muted-light)}
+
+/* ── GANTT SECTION ── */
+#gantt-section{
+  margin-top:24px;
+  opacity:0;transform:translateY(20px);
+  transition:opacity .4s ease,transform .4s ease;
+}
+#gantt-section.visible{opacity:1;transform:translateY(0)}
+
+.gantt-sec-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
+}
+.gantt-sec-title{display:flex;align-items:center;gap:7px}
+.gantt-sec-title .sb{width:3px;height:12px;border-radius:2px;background:var(--primary)}
+.gantt-sec-title .st{font-size:10px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;color:var(--primary)}
+.gantt-week-nav{display:flex;align-items:center;gap:6px}
+.gnav-btn{
+  background:var(--surface);border:1px solid var(--divider);
+  border-radius:7px;padding:4px 9px;font-size:12px;
+  cursor:pointer;color:var(--primary);transition:background .12s;
+  -webkit-tap-highlight-color:transparent;
+}
+.gnav-btn:active{background:var(--divider)}
+.gantt-wlabel{font-size:10.5px;font-weight:600;color:var(--muted);min-width:100px;text-align:center}
+
+/* Gantt card */
+.gantt-card{
+  background:var(--surface);border-radius:var(--r);
+  border:1px solid var(--divider);box-shadow:var(--sh);
+  overflow:hidden;
+}
+.gantt-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--divider) transparent}
+.gantt-scroll::-webkit-scrollbar{height:4px}
+.gantt-scroll::-webkit-scrollbar-thumb{background:var(--divider);border-radius:2px}
+.gantt-table{position:relative;min-width:100%}
+
+/* Header row */
+.gh-row{display:flex;position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--divider)}
+.gh-lbl{width:130px;flex-shrink:0;padding:8px 10px 8px 14px;font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;border-right:1px solid var(--divider);background:var(--surface);position:sticky;left:0;z-index:6}
+.gh-days{display:flex;flex:1}
+.gh-day{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px 0;border-right:1px solid #F0F4F8}
+.gh-day .gd-dow{font-size:8px;color:var(--muted);font-weight:600;margin-bottom:1px}
+.gh-day .gd-n{font-size:12px;font-weight:700;color:var(--primary);line-height:1}
+.gh-day.wknd .gd-dow,.gh-day.wknd .gd-n{color:var(--muted-light)}
+.gh-day.td-col .gd-dow{color:var(--svc-dot)}
+.gh-day.td-col .gd-n{color:var(--svc-dot);font-weight:800}
+
+/* Gantt rows */
+.g-sec-row{display:flex;background:#F8FAFC;border-bottom:1px solid var(--divider)}
+.g-sec-lbl{width:130px;flex-shrink:0;padding:5px 10px 5px 14px;font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;border-right:1px solid var(--divider);background:#F8FAFC;position:sticky;left:0;z-index:3}
+.g-sec-fill{flex:1;background:#F8FAFC}
+
+.g-row{display:flex;border-bottom:1px solid #F4F8FC;min-height:36px}
+.g-row-lbl{width:130px;flex-shrink:0;padding:0 8px 0 14px;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:1px solid var(--divider);background:var(--surface);position:sticky;left:0;z-index:2;display:flex;align-items:center}
+.g-row-grid{flex:1;position:relative;height:36px}
+.g-col{position:absolute;top:0;bottom:0;border-right:1px solid #F2F5FA}
+.g-col.wknd{background:rgba(0,0,0,.015)}
+.g-col.td-col{background:rgba(26,90,170,.05)}
+.g-bar{
+  position:absolute;top:7px;height:22px;border-radius:5px;
+  display:flex;align-items:center;padding:0 7px;overflow:hidden;
+  cursor:default;z-index:1;
+}
+.g-bar span{font-size:9px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.today-vline{position:absolute;top:0;bottom:0;width:2px;background:rgba(26,90,170,.4);z-index:4;pointer-events:none}
+
+/* Full Gantt button */
+.full-gantt-btn{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  margin-top:10px;padding:11px 0;
+  background:var(--surface);border:1px solid var(--divider);
+  border-radius:var(--r);cursor:pointer;
+  font-size:12px;font-weight:600;color:var(--muted);
+  box-shadow:var(--sh);transition:box-shadow .15s,color .15s;
+  -webkit-tap-highlight-color:transparent;
+  text-decoration:none;
+}
+.full-gantt-btn:active{background:#F4F6F9}
+@media(hover:hover){.full-gantt-btn:hover{box-shadow:var(--sh2);color:var(--primary)}}
+.fgb-arrow{font-size:14px;color:var(--muted-light)}
+
+/* Full Gantt overlay */
+#gantt-overlay{
+  position:fixed;inset:0;background:var(--bg);z-index:100;
+  display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform .32s cubic-bezier(.32,.72,0,1);
+}
+#gantt-overlay.open{transform:translateY(0)}
+#go-head{
+  background:var(--surface);border-bottom:1px solid var(--divider);
+  padding:14px 16px 12px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.go-left{display:flex;align-items:center;gap:10px}
+.go-back{background:var(--bg);border:1px solid var(--divider);border-radius:8px;padding:5px 11px;font-size:12px;font-weight:600;color:var(--primary);cursor:pointer;font-family:var(--font);-webkit-tap-highlight-color:transparent}
+.go-back:active{background:var(--divider)}
+.go-title{font-size:14px;font-weight:800;color:var(--primary)}
+.go-nav{display:flex;align-items:center;gap:6px}
+.go-wlabel{font-size:11px;font-weight:600;color:var(--muted);min-width:110px;text-align:center}
+.go-filter{display:flex;gap:5px}
+.gof-btn{padding:4px 9px;border-radius:20px;border:none;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font)}
+#gantt-overlay-scroll{flex:1;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--divider) transparent}
+#gantt-overlay-scroll::-webkit-scrollbar{height:4px;width:4px}
+#gantt-overlay-scroll::-webkit-scrollbar-thumb{background:var(--divider);border-radius:2px}
+#gantt-overlay-inner{position:relative}
+
+/* Mobile */
+@media(max-width:600px){
+  #sidebar{width:158px}
+  .di .dt{display:none}
+  .sb-date{font-size:16px}
+}
+@media(max-width:420px){
+  #sidebar{width:86px}
+  .di .dt{display:none}
+  .di .dow{width:18px;font-size:9px}
+  .di .dn{font-size:13px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div id="sidebar-head">
+      <div class="sb-brand">Artitep 2523</div>
+      <div class="sb-date" id="sb-date">—</div>
+      <div class="sb-count" id="sb-count" style="display:none">
+        <span class="n" id="sb-n">0</span>
+        <span class="l">งาน</span>
+      </div>
+    </div>
+    <div id="date-list"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div id="scroll-area">
+      <div id="cards-container"></div>
+
+      <!-- GANTT INLINE -->
+      <div id="gantt-section">
+        <div class="gantt-sec-header">
+          <div class="gantt-sec-title">
+            <div class="sb"></div>
+            <span class="st">Gantt สัปดาห์นี้</span>
+          </div>
+          <div class="gantt-week-nav">
+            <button class="gnav-btn" onclick="shiftMiniWeek(-1)">‹</button>
+            <div class="gantt-wlabel" id="mini-week-label">—</div>
+            <button class="gnav-btn" onclick="shiftMiniWeek(1)">›</button>
+          </div>
+        </div>
+        <div class="gantt-card">
+          <div class="gantt-scroll">
+            <div class="gantt-table" id="mini-gantt-table"></div>
+          </div>
+        </div>
+        <div class="full-gantt-btn" onclick="openFullGantt()">
+          <span>ดู Gantt ทั้งหมด</span>
+          <span class="fgb-arrow">→</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FULL GANTT OVERLAY -->
+<div id="gantt-overlay">
+  <div id="go-head">
+    <div class="go-left">
+      <button class="go-back" onclick="closeFullGantt()">‹ กลับ</button>
+      <div class="go-title">Gantt Chart</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div class="go-nav">
+        <button class="gnav-btn" onclick="shiftFullWeek(-1)">‹ ก่อนหน้า</button>
+        <div class="go-wlabel" id="full-week-label">—</div>
+        <button class="gnav-btn" onclick="shiftFullWeek(1)">ถัดไป ›</button>
+      </div>
+      <div class="go-filter">
+        <button class="gof-btn" id="gof-all"     onclick="setGF('all')"     style="background:var(--primary);color:#fff">ทั้งหมด</button>
+        <button class="gof-btn" id="gof-service" onclick="setGF('service')" style="background:var(--svc-bg);color:var(--svc-text)">Service</button>
+        <button class="gof-btn" id="gof-sales"   onclick="setGF('sales')"   style="background:var(--sales-bg);color:var(--sales-text)">Sales</button>
+      </div>
+    </div>
+  </div>
+  <div id="gantt-overlay-scroll">
+    <div id="gantt-overlay-inner"></div>
+  </div>
+</div>
+
+<script>
+// ── DATA ───────────────────────────────────────────────────────
+const THDAY=['อา','จ','อ','พ','พฤ','ศ','ส'];
+const THMON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+const EVENTS={
+  '2026-06-01':[
+    {dept:'sales',  title:'นัด คุณต้น บางนา',            loc:'ร้านคุณต้น บางนา',time:'07:00',   tech:['พีทะ'],              note:'ลงตารางนัดวันจันทร์เข้าไปดู host ร้าน'},
+    {dept:'sales',  title:'นัด คุณมิ้ง',                 loc:'ออฟฟิศ',          time:'07:00',   tech:['ฝ่ายขาย'],          note:'นัดสรุปลิสตัวอย่างไม้ คุณต้น'},
+    {dept:'service',title:'มาร์เก็ต สุวรรณภูมิ',         loc:'สุวรรณภูมิ',      time:'ทั้งวัน', tech:['ช่างทะ','ช่างอ้วน'],note:'โครงเหล็กเข้า · 3/6 ตรวจระบบ · 5/6 เปิดขาย'},
+    {dept:'service',title:'คุณธงเชษ เคลียงานและงานสี',   loc:'หน้างานคุณธงเชษ', time:'ทั้งวัน', tech:['ตาดุลย์'],           note:null},
+    {dept:'service',title:'คุณแจ็ค ส่งผนังห้องเบียร์',  loc:'หน้างานคุณแจ็ค',  time:'ทั้งวัน', tech:['พี่ทะ'],             note:null},
+    {dept:'service',title:'ประชุมสั่งของ คุณนกแปตรัว',  loc:'ออฟฟิศ อติเทพ',   time:'ทั้งวัน', tech:['ทีมทั้งหมด'],         note:null},
+    {dept:'service',title:'คุณเลิตา ติด cover',          loc:'หน้างานคุณเลิตา', time:'ทั้งวัน', tech:['ช่างทะ'],            note:null},
+    {dept:'service',title:'คุณธีรพล เดินระบบ เดินไฟ',   loc:'รามคำแหง 21',     time:'ทั้งวัน', tech:['ตาดุลย์','ลูกน้อง'],note:null},
+  ],
+  '2026-06-02':[
+    {dept:'sales',  title:'คุณกฤษฎา บางเขน',            loc:'บางเขน',          time:'09:00',   tech:['ตาดุลย์','ลูกน้อง'],note:null},
+    {dept:'service',title:'ตรวจงาน Villa Asoke',         loc:'Villa Asoke',     time:'10:00',   tech:['ช่างทะ'],            note:'ตรวจงานก่อนส่งมอบ'},
+  ],
+  '2026-06-03':[
+    {dept:'service',title:'PM ประจำเดือน',               loc:'สาขาสุขุมวิท',   time:'09:00',   tech:['ช่างทะ','ช่างอ้วน'],note:null},
+    {dept:'service',title:'คุณปา ติดกระจก',             loc:'หน้างานคุณปา',   time:'ทั้งวัน', tech:['พี่ทะ'],             note:'ติดตั้งกระจกรอบตู้ไวน์'},
+  ],
+  '2026-06-04':[],
+  '2026-06-05':[
+    {dept:'sales',  title:'ส่งมอบงาน Villa Asoke',       loc:'Villa Asoke',     time:'10:00',   tech:['ฝ่ายขาย','ตาดุลย์'],note:'นัดส่งมอบและเซ็นรับงาน'},
+    {dept:'service',title:'ติดตั้งตู้ไวน์ ลาดพร้าว',    loc:'ลาดพร้าว',        time:'08:00',   tech:['พี่ทะ','ลูกน้อง'],  note:'ต่อเนื่อง 5 วัน'},
+  ],
+  '2026-06-06':[
+    {dept:'sales',  title:'เปิดร้าน มาร์เก็ต สุวรรณภูมิ',loc:'สุวรรณภูมิ',     time:'09:00',   tech:['ฝ่ายขาย'],          note:'วันเปิดตัว'},
+  ],
+  '2026-06-07':[
+    {dept:'sales',  title:'ส่งใบเสนอราคา Project บางนา',loc:'ออฟฟิศ',          time:'ทั้งวัน', tech:['ฝ่ายขาย'],          note:null},
+    {dept:'service',title:'Wine Cellar คุณสมชาย',        loc:'ลาดพร้าว',        time:'08:00',   tech:['พี่ทะ','ลูกน้อง'],  note:'วันที่ 3/5'},
+  ],
+  '2026-06-08':[
+    {dept:'service',title:'ตรวจ Compressor โรงแรม',      loc:'โรงแรมสุขุมวิท',  time:'09:00',   tech:['ช่างทะ'],            note:null},
+  ],
+};
+
+const GANTT_JOBS=[
+  {dept:'service',title:'มาร์เก็ต สุวรรณภูมิ',  start:'2026-05-25',end:'2026-06-06',color:'#1A5AAA'},
+  {dept:'service',title:'ย้ายตู้ไวน์คุณเอส',    start:'2026-05-21',end:'2026-06-12',color:'#2878CC'},
+  {dept:'service',title:'ติดตั้งลาดพร้าว',      start:'2026-06-05',end:'2026-06-10',color:'#1A5AAA'},
+  {dept:'service',title:'Wine Cellar คุณสมชาย', start:'2026-06-05',end:'2026-06-12',color:'#2878CC'},
+  {dept:'service',title:'PM สุขุมวิท',           start:'2026-06-03',end:'2026-06-03',color:'#34A853'},
+  {dept:'sales',  title:'Villa Asoke',           start:'2026-06-02',end:'2026-06-05',color:'#C8920A'},
+  {dept:'sales',  title:'Project บางนา',         start:'2026-06-07',end:'2026-06-09',color:'#D4A020'},
+  {dept:'sales',  title:'คุณต้น บางนา',         start:'2026-06-01',end:'2026-06-01',color:'#C8920A'},
+  {dept:'sales',  title:'มาร์เก็ต เปิดขาย',     start:'2026-06-06',end:'2026-06-06',color:'#B87020'},
+];
+
+// ── HELPERS ────────────────────────────────────────────────────
+function toKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+function parseDate(s){const[y,m,dd]=s.split('-').map(Number);return new Date(y,m-1,dd)}
+function fmtFull(d){return `${d.getDate()} ${THMON[d.getMonth()]} ${d.getFullYear()}`}
+function fmtShort(d){return `${d.getDate()} ${THMON[d.getMonth()]}`}
+function startOfWeek(d){const x=new Date(d);x.setDate(x.getDate()-x.getDay());x.setHours(0,0,0,0);return x}
+
+// ── STATE ──────────────────────────────────────────────────────
+const urlDate=new URLSearchParams(location.search).get('date');
+let today=urlDate?parseDate(urlDate):new Date();
+today.setHours(0,0,0,0);
+
+let selDate=new Date(today);
+let openCardId=null;
+let miniWeekStart=startOfWeek(today);
+let fullWeekStart=startOfWeek(today);
+let ganttFilter='all';
+
+const STRIP_COUNT=30;
+const stripDates=Array.from({length:STRIP_COUNT},(_,i)=>addDays(today,i-7));
+
+// ── SIDEBAR ────────────────────────────────────────────────────
+function buildSidebar(){
+  const list=document.getElementById('date-list');
+  list.innerHTML='';
+  stripDates.forEach((d,i)=>{
+    const key=toKey(d);
+    const evs=EVENTS[key]||[];
+    const firstEv=evs.length?evs[0].title.slice(0,11)+(evs.length>1?` +${evs.length-1}`:''):'';
+    const el=document.createElement('div');
+    el.className='di'+(evs.length?' has-ev':'')+(toKey(d)===toKey(new Date())?' is-today':'')+(toKey(d)===toKey(selDate)?' sel':'');
+    el.innerHTML=`<span class="dow">${THDAY[d.getDay()]}</span><span class="dn">${d.getDate()}</span><span class="dt">${firstEv}</span><div class="dot"></div>`;
+    el.onclick=()=>selectDate(d);
+    list.appendChild(el);
+  });
+  setTimeout(()=>{
+    const sel=list.querySelector('.sel');
+    if(sel)sel.scrollIntoView({block:'center',behavior:'smooth'});
+  },80);
+}
+
+function updateSidebarHead(){
+  document.getElementById('sb-date').textContent=fmtFull(selDate);
+  const n=(EVENTS[toKey(selDate)]||[]).length;
+  const cnt=document.getElementById('sb-count');
+  cnt.style.display=n>0?'inline-flex':'none';
+  document.getElementById('sb-n').textContent=n;
+}
+
+function selectDate(d){
+  selDate=new Date(d);openCardId=null;
+  document.querySelectorAll('.di').forEach((el,i)=>{
+    el.classList.toggle('sel',toKey(stripDates[i])===toKey(selDate));
+  });
+  updateSidebarHead();
+  renderJobs();
+  // scroll to top
+  document.getElementById('scroll-area').scrollTop=0;
+}
+
+// ── JOB CARDS ─────────────────────────────────────────────────
+function renderJobs(){
+  const key=toKey(selDate);
+  const items=EVENTS[key]||[];
+  const sales=items.filter(e=>e.dept==='sales');
+  const service=items.filter(e=>e.dept==='service');
+  const container=document.getElementById('cards-container');
+  container.innerHTML='';openCardId=null;
+
+  if(!items.length){
+    container.innerHTML=`<div class="empty-state"><div class="empty-line"></div><div class="empty-t">ไม่มีกิจกรรมวันนี้</div><div class="empty-s">เลือกวันอื่นจากรายการซ้ายมือ</div></div>`;
+    triggerGanttVisible();return;
+  }
+
+  let delay=0;
+  const appendSection=(list,dept)=>{
+    if(!list.length)return;
+    const isSales=dept==='sales';
+    const dot=isSales?'var(--sales-dot)':'var(--svc-dot)';
+    const bg=isSales?'var(--sales-bg)':'var(--svc-bg)';
+    const txt=isSales?'var(--sales-text)':'var(--svc-text)';
+    const lbl=isSales?'SALES &amp; CLIENT MEETINGS':'SERVICE &amp; SITE OPERATIONS';
+
+    const secEl=document.createElement('div');
+    secEl.innerHTML=`<div class="sec-label"><div class="sb" style="background:${dot}"></div><span class="st" style="color:${txt}">${lbl}</span><span class="sc" style="color:${txt};background:${bg}">${list.length}</span></div>`;
+    container.appendChild(secEl);
+
+    list.forEach((item,idx)=>{
+      const id=`${dept}-${idx}`;
+      const wrap=document.createElement('div');
+      wrap.className='card-wrap';
+      const tagsBg=isSales?'var(--sales-bg)':'var(--svc-bg)';
+      const tagsText=isSales?'var(--sales-text)':'var(--svc-text)';
+      const accent=isSales?'var(--sales-dot)':'var(--svc-dot)';
+      const meta=[item.loc,item.time].filter(Boolean).join(' &nbsp;·&nbsp; ');
+      const safeItem=JSON.stringify(item).replace(/\\/g,'\\\\').replace(/"/g,'&quot;');
+
+      wrap.innerHTML=`
+        <div class="job-card" id="card-${id}" style="animation-delay:${delay}ms" onclick="toggleCard('${id}','${dept}','${safeItem}')">
+          <div class="card-title">${item.title}</div>
+          <div class="card-meta">${meta}</div>
+          <div class="card-tags">${item.tech.map(t=>`<span class="tag" style="background:${tagsBg};color:${tagsText}">${t}</span>`).join('')}</div>
+        </div>
+        <div class="card-detail" id="detail-${id}" style="display:none">
+          <div class="det-accent" style="background:${accent}"></div>
+          <div class="det-inner">
+            <div class="det-row"><span class="d-lbl">สถานที่</span><span class="d-val">${item.loc}</span></div>
+            <div class="det-row"><span class="d-lbl">เวลา</span><span class="d-val">${item.time}</span></div>
+            <div class="det-row"><span class="d-lbl">ผู้รับผิดชอบ</span><div class="d-val" style="display:flex;flex-wrap:wrap;gap:5px">${item.tech.map(t=>`<span class="tag" style="background:${tagsBg};color:${tagsText}">${t}</span>`).join('')}</div></div>
+            ${item.note?`<div class="det-note"><div class="dn-lbl">หมายเหตุ</div><div class="dn-txt">${item.note}</div></div>`:''}
+          </div>
+        </div>`;
+      container.appendChild(wrap);
+      delay+=35;
+    });
+  };
+
+  appendSection(sales,'sales');
+  if(sales.length&&service.length){const d=document.createElement('div');d.className='sec-div';container.appendChild(d)}
+  appendSection(service,'service');
+
+  // Trigger gantt after cards animate in
+  setTimeout(triggerGanttVisible, delay+200);
+}
+
+function toggleCard(id,dept,safeItem){
+  const item=JSON.parse(safeItem.replace(/&quot;/g,'"'));
+  const card=document.getElementById('card-'+id);
+  const detail=document.getElementById('detail-'+id);
+  const isOpen=openCardId===id;
+  if(openCardId&&openCardId!==id){
+    document.getElementById('card-'+openCardId)?.classList.remove('open');
+    const prev=document.getElementById('detail-'+openCardId);
+    if(prev)prev.style.display='none';
+  }
+  if(isOpen){
+    card.classList.remove('open');detail.style.display='none';openCardId=null;
+  } else {
+    card.classList.add('open');detail.style.display='block';openCardId=id;
+    setTimeout(()=>card.scrollIntoView({block:'nearest',behavior:'smooth'}),60);
+  }
+}
+
+// ── GANTT REVEAL ───────────────────────────────────────────────
+function triggerGanttVisible(){
+  renderMiniGantt();
+  const sec=document.getElementById('gantt-section');
+  sec.classList.remove('visible');
+  // Use IntersectionObserver to animate when scrolled into view
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){sec.classList.add('visible');obs.disconnect()}});
+  },{threshold:0.05});
+  obs.observe(sec);
+  // Fallback: also trigger after delay
+  setTimeout(()=>sec.classList.add('visible'),600);
+}
+
+// ── MINI GANTT ─────────────────────────────────────────────────
+const MINI_DAYS=14;
+const DAY_W=46;
+
+function shiftMiniWeek(dir){miniWeekStart=addDays(miniWeekStart,dir*7);renderMiniGantt()}
+
+function renderMiniGantt(){
+  renderGanttInto('mini-gantt-table','mini-week-label',miniWeekStart,MINI_DAYS,DAY_W,'all',130);
+}
+
+// ── FULL GANTT ─────────────────────────────────────────────────
+function openFullGantt(){
+  document.getElementById('gantt-overlay').classList.add('open');
+  fullWeekStart=new Date(miniWeekStart);
+  renderFullGantt();
+}
+function closeFullGantt(){document.getElementById('gantt-overlay').classList.remove('open')}
+function shiftFullWeek(dir){fullWeekStart=addDays(fullWeekStart,dir*7);renderFullGantt()}
+function setGF(f){
+  ganttFilter=f;
+  ['all','service','sales'].forEach(k=>{
+    const btn=document.getElementById('gof-'+k);
+    if(!btn)return;
+    if(k==='all')    {btn.style.background=f==='all'?'var(--primary)':'var(--bg)';btn.style.color=f==='all'?'#fff':'var(--muted)'}
+    if(k==='service'){btn.style.background=f==='service'?'var(--svc-dot)':'var(--svc-bg)';btn.style.color=f==='service'?'#fff':'var(--svc-text)'}
+    if(k==='sales')  {btn.style.background=f==='sales'?'var(--sales-dot)':'var(--sales-bg)';btn.style.color=f==='sales'?'#fff':'var(--sales-text)'}
+  });
+  renderFullGantt();
+}
+function renderFullGantt(){
+  renderGanttInto('gantt-overlay-inner','full-week-label',fullWeekStart,14,54,ganttFilter,140);
+}
+
+// ── SHARED GANTT RENDERER ─────────────────────────────────────
+function renderGanttInto(tableId,labelId,ws,numDays,dw,filter,lblW){
+  const we=addDays(ws,numDays-1);
+  document.getElementById(labelId).textContent=`${fmtShort(ws)} – ${fmtShort(we)}`;
+  const days=Array.from({length:numDays},(_,i)=>addDays(ws,i));
+  const todayKey=toKey(new Date());
+  const jobs=GANTT_JOBS.filter(j=>filter==='all'||j.dept===filter);
+  const svcJobs=jobs.filter(j=>j.dept==='service');
+  const salesJobs=jobs.filter(j=>j.dept==='sales');
+  const totalW=numDays*dw;
+  const el=document.getElementById(tableId);
+  el.innerHTML='';
+  el.style.minWidth=(lblW+totalW)+'px';
+
+  // Header
+  const hdr=document.createElement('div');
+  hdr.className='gh-row';
+  hdr.innerHTML=`<div class="gh-lbl" style="width:${lblW}px">งาน / Project</div>
+    <div class="gh-days" style="width:${totalW}px">
+      ${days.map(d=>{
+        const wknd=d.getDay()===0||d.getDay()===6;
+        const isTd=toKey(d)===todayKey;
+        return `<div class="gh-day${wknd?' wknd':''}${isTd?' td-col':''}" style="width:${dw}px">
+          <span class="gd-dow">${THDAY[d.getDay()]}</span>
+          <span class="gd-n">${d.getDate()}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  el.appendChild(hdr);
+
+  // Today offset
+  const todayD=new Date();todayD.setHours(0,0,0,0);
+  const todayOff=(todayD-ws)/86400000;
+
+  const renderSec=(list,secLabel)=>{
+    if(!list.length)return;
+    const sr=document.createElement('div');sr.className='g-sec-row';
+    sr.innerHTML=`<div class="g-sec-lbl" style="width:${lblW}px">${secLabel}</div><div class="g-sec-fill" style="width:${totalW}px"></div>`;
+    el.appendChild(sr);
+
+    list.forEach(job=>{
+      const jobStart=parseDate(job.start);const jobEnd=parseDate(job.end);
+      const s=Math.max(0,Math.round((jobStart-ws)/86400000));
+      const e=Math.min(numDays,Math.round((jobEnd-ws)/86400000)+1);
+      const span=Math.max(0,e-s);
+
+      const row=document.createElement('div');row.className='g-row';
+      const cols=days.map((d,ci)=>{
+        const wknd=d.getDay()===0||d.getDay()===6;
+        const isTd=toKey(d)===todayKey;
+        return `<div class="g-col${wknd?' wknd':''}${isTd?' td-col':''}" style="left:${ci*dw}px;width:${dw}px"></div>`;
+      }).join('');
+      const bar=span>0?`<div class="g-bar" style="left:${s*dw+2}px;width:${span*dw-4}px;background:${job.color}"><span>${job.title}</span></div>`:'';
+
+      row.innerHTML=`<div class="g-row-lbl" style="width:${lblW}px">${job.title}</div>
+        <div class="g-row-grid" style="width:${totalW}px">${cols}${bar}</div>`;
+      el.appendChild(row);
+    });
+  };
+
+  renderSec(svcJobs,'SERVICE');renderSec(salesJobs,'SALES');
+
+  // Today line
+  if(todayOff>=0&&todayOff<numDays){
+    const tl=document.createElement('div');
+    tl.style.cssText=`position:absolute;top:0;bottom:0;left:${lblW+todayOff*dw+dw/2}px;width:2px;background:rgba(26,90,170,.4);z-index:8;pointer-events:none`;
+    tl.innerHTML=`<span style="position:absolute;top:3px;left:3px;font-size:7.5px;font-weight:700;color:var(--svc-dot);white-space:nowrap">วันนี้</span>`;
+    el.style.position='relative';el.appendChild(tl);
+    // Auto scroll
+    const wrap=el.closest('.gantt-scroll')||document.getElementById('gantt-overlay-scroll');
+    if(wrap){setTimeout(()=>{wrap.scrollLeft=Math.max(0,lblW+todayOff*dw+dw/2-wrap.clientWidth/2)},80)}
+  }
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+buildSidebar();updateSidebarHead();renderJobs();
+if(typeof liff!=='undefined')liff.init({liffId:'YOUR_LIFF_ID'}).catch(()=>{});
+</script>
+</body>
+</html>
