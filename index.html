@@ -16,7 +16,7 @@
   --font:'Sarabun',sans-serif;
   --sh:0 1px 3px rgba(26,39,64,.06),0 4px 12px rgba(26,39,64,.05);
 }
-html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--primary);-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--primary);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-synthesis:none;overscroll-behavior:none}
 #app{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 button{font-family:var(--font)}
 
@@ -258,7 +258,7 @@ const THDAY=['อา','จ','อ','พ','พฤ','ศ','ส'];
 const THMON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const THMON_FULL=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
-const EVENTS={
+let EVENTS={
   '2026-06-01':[
     {dept:'sales',  title:'นัด คุณต้น บางนา',            loc:'ร้านคุณต้น บางนา',time:'07:00',tech:['พีทะ']},
     {dept:'sales',  title:'นัด คุณมิ้ง',                 loc:'ออฟฟิศ',          time:'07:00',tech:['ฝ่ายขาย']},
@@ -293,7 +293,7 @@ const EVENTS={
   ],
 };
 
-const GANTT_JOBS=[
+let GANTT_JOBS=[
   {dept:'service',title:'มาร์เก็ต สุวรรณภูมิ',  start:'2026-05-25',end:'2026-06-06',color:'#1A5AAA'},
   {dept:'service',title:'ย้ายตู้ไวน์คุณเอส',    start:'2026-05-21',end:'2026-06-12',color:'#2878CC'},
   {dept:'service',title:'ติดตั้งลาดพร้าว',      start:'2026-06-05',end:'2026-06-10',color:'#1A5AAA'},
@@ -567,7 +567,16 @@ function setView(v){
 }
 
 // ── FULL GANTT ────────────────────────────────────────────────
-function openGantt(){document.getElementById('go-overlay').classList.add('open');buildGanttInto(document.getElementById('go-inner'),document.getElementById('full-wlabel'),fullWeekStart,14,54,ganttFilter,140);}
+function openGantt(){
+  const ov=document.getElementById('go-overlay');
+  ov.classList.add('open');
+  // render หลัง overlay เริ่มเปิด (กัน layout ยังไม่พร้อม → หน้าขาว)
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      buildGanttInto(document.getElementById('go-inner'),document.getElementById('full-wlabel'),fullWeekStart,14,54,ganttFilter,140);
+    },60);
+  });
+}
 function closeGantt(){document.getElementById('go-overlay').classList.remove('open');}
 function shiftFullWeek(dir){fullWeekStart=addDays(fullWeekStart,dir*7);buildGanttInto(document.getElementById('go-inner'),document.getElementById('full-wlabel'),fullWeekStart,14,54,ganttFilter,140);}
 function setGF(f){
@@ -619,6 +628,14 @@ function buildGanttInto(el,lblEl,ws,numDays,dw,filter,lblW){
   renderSec(jobs.filter(j=>j.dept==='service'),'SERVICE');
   renderSec(jobs.filter(j=>j.dept==='sales'),'SALES');
 
+  // ไม่มีงานในช่วงนี้ → แสดงข้อความ กันหน้าขาวเปล่า
+  if(!jobs.length){
+    const empty=document.createElement('div');
+    empty.style.cssText='padding:30px 16px;text-align:center;color:#8A9AB0;font-size:13px';
+    empty.textContent='ไม่มีงานในช่วงเวลานี้';
+    el.appendChild(empty);
+  }
+
   if(todayOff>=0&&todayOff<numDays){
     const tl=document.createElement('div');tl.className='today-vline';
     tl.style.left=`${lblW+todayOff*dw+dw/2}px`;
@@ -629,8 +646,46 @@ function buildGanttInto(el,lblEl,ws,numDays,dw,filter,lblW){
 }
 
 // ── INIT ──────────────────────────────────────────────────────
-render();
-if(typeof liff!=='undefined')liff.init({liffId:'YOUR_LIFF_ID'}).catch(()=>{});
+// 👇 ใส่ Apps Script Web App URL (ลงท้าย /exec) — ตัวเดียวกับที่ deploy เป็น webhook
+const API_URL = 'https://script.google.com/macros/s/AKfycbwKH3Lm9GwN35tG44AVqxHeCwyxA_hzz0fKiInzAp_GbtmCWbUHm3iT5sM_lkHmfVTD/exec';
+
+// แสดง overlay โหลดชั่วคราว
+function showLoading(on){
+  let el=document.getElementById('liff-loading');
+  if(on){
+    if(!el){
+      el=document.createElement('div');
+      el.id='liff-loading';
+      el.style.cssText='position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(244,246,249,.85);font-family:var(--font);font-size:13px;color:#8A9AB0;font-weight:600';
+      el.textContent='กำลังโหลดข้อมูล…';
+      document.body.appendChild(el);
+    }
+  } else if(el){ el.remove(); }
+}
+
+// ดึงข้อมูลจริงจาก Apps Script แล้วเขียนทับ EVENTS / GANTT_JOBS
+async function loadRealData(){
+  if(!API_URL || API_URL==='YOUR_APPS_SCRIPT_EXEC_URL') return; // ยังไม่ใส่ URL → ใช้ hardcoded
+  const dateStr=toKey(today);
+  try{
+    showLoading(true);
+    const res=await fetch(`${API_URL}?date=${dateStr}`,{method:'GET',redirect:'follow'});
+    const data=await res.json();
+    if(data && data.status==='ok'){
+      if(data.byDate && Object.keys(data.byDate).length) EVENTS=data.byDate;
+      if(data.gantt && data.gantt.length)               GANTT_JOBS=data.gantt;
+      render(); // re-render ด้วยข้อมูลจริง
+    }
+  }catch(err){
+    console.error('โหลดข้อมูลจริงไม่สำเร็จ ใช้ข้อมูลตัวอย่างแทน:',err);
+  }finally{
+    showLoading(false);
+  }
+}
+
+render();                 // render ครั้งแรกด้วย hardcoded (เห็นทันที ไม่รอ fetch)
+loadRealData();           // แล้วดึงของจริงมาทับ
+if(typeof liff!=='undefined')liff.init({liffId:'2010252276-9Pqp6Koj'}).catch(()=>{});
 
 function closeLIFF(){
   if(typeof liff!=='undefined'&&liff.isInClient()){
