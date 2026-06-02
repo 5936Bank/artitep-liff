@@ -734,4 +734,740 @@ function closeLIFF(){
 }
 </script>
 </body>
+</html><!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Daily Brief · Artitep 2523</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F4F6F9;--surface:#fff;--primary:#1A2740;
+  --muted:#8A9AB0;--divider:#E4EAF2;
+  --sales:#C8920A;--svc:#1A5AAA;
+  --sales-light:#FDF8EE;--svc-light:#EBF3FF;
+  --today:#1A5AAA;--red:#D94040;
+  --font:'Sarabun',sans-serif;
+  --sh:0 1px 3px rgba(26,39,64,.06),0 4px 12px rgba(26,39,64,.05);
+}
+html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--primary);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-synthesis:none;overscroll-behavior:none}
+#app{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+button{font-family:var(--font)}
+
+/* ── TOP NAV ── */
+#topnav{
+  background:var(--surface);border-bottom:1px solid var(--divider);
+  padding:10px 14px 8px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.nav-left{display:flex;flex-direction:column}
+.nav-brand{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase}
+.nav-period{font-size:17px;font-weight:800;color:var(--primary);letter-spacing:-.3px;line-height:1.15;margin-top:1px}
+.nav-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+
+/* View switcher */
+.view-tabs{display:flex;background:var(--bg);border-radius:8px;padding:2px}
+.view-tab{padding:5px 10px;border-radius:6px;border:none;background:transparent;cursor:pointer;font-size:11px;font-weight:600;color:var(--muted);transition:all .15s;-webkit-tap-highlight-color:transparent}
+.view-tab.active{background:var(--surface);color:var(--primary);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+.nav-btn{background:var(--bg);border:1px solid var(--divider);border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--primary);-webkit-tap-highlight-color:transparent}
+.nav-btn:active{background:var(--divider)}
+.today-btn{background:var(--primary);border:none;border-radius:7px;padding:0 10px;height:30px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+/* ── DOW HEADER (week/month) ── */
+#dow-header{
+  background:var(--surface);border-bottom:1px solid var(--divider);
+  display:grid;grid-template-columns:repeat(7,1fr);
+  flex-shrink:0;padding:4px 0 0;
+}
+.dow-h{text-align:center;font-size:10px;font-weight:600;color:var(--muted);padding-bottom:4px}
+.dow-h.red{color:var(--red)}
+
+/* ── SCROLL AREA ── */
+#cal-scroll{flex:1;overflow-y:auto;scrollbar-width:none}
+#cal-scroll::-webkit-scrollbar{display:none}
+#cal-body{padding:0}
+
+/* ── MONTH VIEW ── */
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.m-day{
+  min-height:56px;border-bottom:1px solid var(--divider);border-right:1px solid var(--divider);
+  padding:4px 3px;cursor:pointer;background:var(--surface);
+  transition:background .12s;-webkit-tap-highlight-color:transparent;
+}
+.m-day:nth-child(7n){border-right:none}
+.m-day:active{background:#F0F4F8}
+.m-day.other-month{background:var(--bg)}
+.m-day.other-month .m-num{color:var(--muted)}
+.m-num{
+  width:24px;height:24px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;color:var(--primary);
+  margin-bottom:2px;
+}
+.m-day.is-today .m-num{background:var(--today);color:#fff;font-weight:800}
+.m-day.selected .m-num{background:var(--primary);color:#fff;font-weight:800}
+.m-day.weekend .m-num{color:var(--red)}
+.m-day.is-today .m-num,.m-day.selected .m-num{color:#fff}
+.m-ev{
+  font-size:9.5px;font-weight:600;color:#fff;
+  border-radius:3px;padding:1px 4px;margin-bottom:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  max-width:100%;display:block;
+}
+.m-more{font-size:9px;color:var(--muted);padding-left:2px}
+
+/* ── WEEK VIEW ── */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);background:var(--surface)}
+.w-day{
+  border-right:1px solid var(--divider);min-height:60px;
+  padding:4px 3px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  background:var(--surface);transition:background .1s;
+}
+.w-day:nth-child(7n){border-right:none}
+.w-day:active{background:#F4F6F9}
+.w-day.selected{background:#EBF3FF}
+.w-num{
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:var(--primary);
+  margin:0 auto 3px;
+}
+.w-day.is-today .w-num{background:var(--today);color:#fff;font-weight:800}
+.w-day.selected .w-num{background:var(--primary);color:#fff}
+.w-day.is-today.selected .w-num{background:var(--primary)}
+.w-day.weekend .w-num{color:var(--red)}
+.w-day.is-today .w-num,.w-day.selected .w-num{color:#fff}
+.w-ev{
+  font-size:9px;font-weight:600;color:#fff;
+  border-radius:3px;padding:1px 3px;margin-bottom:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;
+}
+.w-more{font-size:8.5px;color:var(--muted);text-align:center}
+
+/* Week selected day events below grid */
+#week-events{background:var(--bg);border-top:2px solid var(--divider);padding:12px 14px 40px}
+#day-events-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.day-ev-label{font-size:13px;font-weight:800;color:var(--primary)}
+.day-ev-count{background:var(--svc-light);border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;color:var(--svc)}
+
+/* ── DAY VIEW ── */
+#day-view{padding:14px 14px 40px;background:var(--bg)}
+#day-view-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.day-view-label{font-size:16px;font-weight:800;color:var(--primary)}
+.day-nav-row{display:flex;gap:6px;align-items:center}
+
+/* ── CARDS (shared) ── */
+.sec-row{display:flex;align-items:center;gap:7px;margin-bottom:8px;margin-top:4px}
+.sec-bar{width:3px;height:12px;border-radius:2px;flex-shrink:0}
+.sec-text{font-size:10px;font-weight:800;letter-spacing:.7px;text-transform:uppercase}
+.sec-cnt{font-size:9.5px;font-weight:700;padding:1px 7px;border-radius:20px}
+.sec-div{height:1px;background:var(--divider);margin:10px 0 12px}
+.job-card{
+  background:var(--surface);border-radius:11px;
+  padding:11px 13px 9px;margin-bottom:7px;
+  box-shadow:var(--sh);border:1px solid var(--divider);
+  animation:ci .2s ease both;
+}
+@keyframes ci{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.card-title{font-size:13px;font-weight:700;color:var(--primary);line-height:1.3;margin-bottom:4px}
+.card-row2{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.card-loc{font-size:11.5px;color:var(--muted)}
+.card-time{font-size:11px;color:var(--muted)}
+.card-tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:20px;color:#fff}
+
+.empty-state{text-align:center;padding:32px 0}
+.empty-line{width:30px;height:3px;background:var(--divider);border-radius:2px;margin:0 auto 10px}
+
+/* ── GANTT ── */
+#gantt-section{margin-top:16px;opacity:0;transform:translateY(12px);transition:opacity .35s,transform .35s}
+#gantt-section.vis{opacity:1;transform:translateY(0)}
+.gantt-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.gantt-title-row{display:flex;align-items:center;gap:6px}
+.gantt-card{background:var(--surface);border-radius:11px;border:1px solid var(--divider);overflow:hidden;box-shadow:var(--sh)}
+.g-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--divider) transparent}
+.g-scroll::-webkit-scrollbar{height:3px}
+.g-scroll::-webkit-scrollbar-thumb{background:var(--divider);border-radius:2px}
+.g-inner{position:relative}
+.gh-row{display:flex;background:var(--surface);border-bottom:1px solid var(--divider);position:sticky;top:0;z-index:5}
+.gh-lbl{flex-shrink:0;padding:7px 8px 7px 12px;font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.6px;border-right:1px solid var(--divider);background:var(--surface)}
+.gh-day{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 0;border-right:1px solid #F0F4F8}
+.gd-dow{font-size:8px;color:var(--muted);font-weight:600}
+.gd-n{font-size:11px;font-weight:700;color:var(--primary);line-height:1}
+.gh-day.wknd .gd-dow,.gh-day.wknd .gd-n{color:var(--muted)}
+.gh-day.tdc .gd-dow{color:var(--svc)}
+.gh-day.tdc .gd-n{color:var(--svc);font-weight:800}
+.g-sec-row{display:flex;background:#F8FAFC;border-bottom:1px solid var(--divider)}
+.g-sec-lbl{flex-shrink:0;padding:4px 8px 4px 12px;font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.6px;border-right:1px solid var(--divider);background:#F8FAFC}
+.g-data-row{display:flex;border-bottom:1px solid #F4F8FC;min-height:32px}
+.g-lbl{flex-shrink:0;padding:0 8px 0 12px;font-size:10px;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-right:1px solid var(--divider);background:var(--surface);display:flex;align-items:center}
+.g-grid{flex:1;position:relative;height:32px}
+.g-col{position:absolute;top:0;bottom:0;border-right:1px solid #F2F6FA}
+.g-col.wknd{background:rgba(0,0,0,.014)}
+.g-col.tdc{background:rgba(26,90,170,.05)}
+.g-bar{position:absolute;top:5px;height:22px;border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;z-index:1}
+.g-bar-txt{font-size:9px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.today-vline{position:absolute;top:0;bottom:0;width:2px;background:rgba(26,90,170,.4);z-index:4;pointer-events:none}
+.full-gantt-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-top:8px;padding:10px;
+  background:var(--surface);border:1px solid var(--divider);
+  border-radius:11px;cursor:pointer;
+  font-size:12px;font-weight:600;color:var(--muted);
+  box-shadow:var(--sh);-webkit-tap-highlight-color:transparent;
+}
+
+/* ── FULL GANTT OVERLAY ── */
+#go-overlay{
+  position:fixed;inset:0;background:var(--bg);z-index:100;
+  display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform .32s cubic-bezier(.32,.72,0,1);
+}
+#go-overlay.open{transform:translateY(0)}
+#go-head{background:var(--surface);border-bottom:1px solid var(--divider);padding:11px 14px 9px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:7px}
+.go-back{background:var(--bg);border:1px solid var(--divider);border-radius:7px;padding:5px 11px;font-size:12px;font-weight:700;color:var(--primary);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.go-wlabel{font-size:11px;font-weight:600;color:var(--muted);min-width:110px;text-align:center}
+.gof-btn{padding:4px 9px;border-radius:20px;border:none;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font)}
+#go-scroll{flex:1;overflow:auto}
+#go-inner{position:relative}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP NAV -->
+  <div id="topnav">
+    <div class="nav-left">
+      <div class="nav-brand">Artitep 2523</div>
+      <div class="nav-period" id="nav-period">—</div>
+    </div>
+    <div class="nav-right">
+      <div class="view-tabs">
+        <button class="view-tab" onclick="setView('day')"   id="vt-day">วัน</button>
+        <button class="view-tab active" onclick="setView('week')"  id="vt-week">สัปดาห์</button>
+        <button class="view-tab" onclick="setView('month')" id="vt-month">เดือน</button>
+      </div>
+      <button class="today-btn" onclick="goToday()">วันนี้</button>
+      <button class="nav-btn" onclick="navPrev()">‹</button>
+      <button class="nav-btn" onclick="navNext()">›</button>
+      <button class="nav-btn" onclick="closeLIFF()" title="ปิดและกลับ LINE" style="font-size:16px;color:#8A9AB0">✕</button>
+    </div>
+  </div>
+
+  <!-- DOW header (week/month only) -->
+  <div id="dow-header"></div>
+
+  <!-- SCROLLABLE CALENDAR BODY -->
+  <div id="cal-scroll">
+    <div id="cal-body"></div>
+  </div>
+
+</div>
+
+<!-- FULL GANTT OVERLAY -->
+<div id="go-overlay">
+  <div id="go-head">
+    <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+      <button class="go-back" onclick="closeGantt()">‹ กลับ</button>
+      <span style="font-size:14px;font-weight:800;color:var(--primary)">Gantt Chart</span>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <button class="nav-btn" onclick="shiftFullWeek(-1)">‹</button>
+      <span class="go-wlabel" id="full-wlabel">—</span>
+      <button class="nav-btn" onclick="shiftFullWeek(1)">›</button>
+      <div style="display:flex;gap:4px">
+        <button class="gof-btn" id="gof-all"     onclick="setGF('all')"     style="background:var(--primary);color:#fff">ทั้งหมด</button>
+        <button class="gof-btn" id="gof-service" onclick="setGF('service')" style="background:var(--svc-light);color:var(--svc)">Service</button>
+        <button class="gof-btn" id="gof-sales"   onclick="setGF('sales')"   style="background:var(--sales-light);color:var(--sales)">Sales</button>
+      </div>
+    </div>
+  </div>
+  <div id="go-scroll"><div id="go-inner"></div></div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────
+const THDAY=['อา','จ','อ','พ','พฤ','ศ','ส'];
+const THMON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const THMON_FULL=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+let EVENTS={
+  '2026-06-01':[
+    {dept:'sales',  title:'นัด คุณต้น บางนา',            loc:'ร้านคุณต้น บางนา',time:'07:00',tech:['พีทะ']},
+    {dept:'sales',  title:'นัด คุณมิ้ง',                 loc:'ออฟฟิศ',          time:'07:00',tech:['ฝ่ายขาย']},
+    {dept:'service',title:'มาร์เก็ต สุวรรณภูมิ',         loc:'สุวรรณภูมิ',      time:'ทั้งวัน',tech:['ช่างทะ','ช่างอ้วน']},
+    {dept:'service',title:'คุณธงเชษ เคลียงานและงานสี',   loc:'หน้างานคุณธงเชษ', time:'ทั้งวัน',tech:['ตาดุลย์']},
+    {dept:'service',title:'คุณแจ็ค ส่งผนังห้องเบียร์',  loc:'หน้างานคุณแจ็ค',  time:'ทั้งวัน',tech:['พี่ทะ']},
+    {dept:'service',title:'ประชุมสั่งของ คุณนกแปตรัว',  loc:'ออฟฟิศ อติเทพ',   time:'ทั้งวัน',tech:['ทีมทั้งหมด']},
+    {dept:'service',title:'คุณเลิตา ติด cover',          loc:'หน้างานคุณเลิตา', time:'ทั้งวัน',tech:['ช่างทะ']},
+    {dept:'service',title:'คุณธีรพล เดินระบบ เดินไฟ',   loc:'รามคำแหง 21',     time:'ทั้งวัน',tech:['ตาดุลย์','ลูกน้อง']},
+  ],
+  '2026-06-02':[
+    {dept:'sales',  title:'คุณกฤษฎา บางเขน',            loc:'บางเขน',          time:'09:00',tech:['ตาดุลย์','ลูกน้อง']},
+    {dept:'service',title:'ตรวจงาน Villa Asoke',         loc:'Villa Asoke',     time:'10:00',tech:['ช่างทะ']},
+  ],
+  '2026-06-03':[
+    {dept:'service',title:'PM ประจำเดือน',               loc:'สาขาสุขุมวิท',   time:'09:00',tech:['ช่างทะ','ช่างอ้วน']},
+    {dept:'service',title:'คุณปา ติดกระจก',             loc:'หน้างานคุณปา',   time:'ทั้งวัน',tech:['พี่ทะ']},
+  ],
+  '2026-06-05':[
+    {dept:'sales',  title:'ส่งมอบงาน Villa Asoke',       loc:'Villa Asoke',     time:'10:00',tech:['ฝ่ายขาย','ตาดุลย์']},
+    {dept:'service',title:'ติดตั้งตู้ไวน์ ลาดพร้าว',    loc:'ลาดพร้าว',        time:'08:00',tech:['พี่ทะ','ลูกน้อง']},
+  ],
+  '2026-06-06':[
+    {dept:'sales',  title:'เปิดร้าน มาร์เก็ต สุวรรณภูมิ',loc:'สุวรรณภูมิ',    time:'09:00',tech:['ฝ่ายขาย']},
+  ],
+  '2026-06-07':[
+    {dept:'sales',  title:'ส่งใบเสนอราคา Project บางนา',loc:'ออฟฟิศ',          time:'ทั้งวัน',tech:['ฝ่ายขาย']},
+    {dept:'service',title:'Wine Cellar คุณสมชาย',        loc:'ลาดพร้าว',        time:'08:00',tech:['พี่ทะ','ลูกน้อง']},
+  ],
+  '2026-06-08':[
+    {dept:'service',title:'ตรวจ Compressor โรงแรม',      loc:'โรงแรมสุขุมวิท',  time:'09:00',tech:['ช่างทะ']},
+  ],
+};
+
+let GANTT_JOBS=[
+  {dept:'service',title:'มาร์เก็ต สุวรรณภูมิ',  start:'2026-05-25',end:'2026-06-06',color:'#1A5AAA'},
+  {dept:'service',title:'ย้ายตู้ไวน์คุณเอส',    start:'2026-05-21',end:'2026-06-12',color:'#2878CC'},
+  {dept:'service',title:'ติดตั้งลาดพร้าว',      start:'2026-06-05',end:'2026-06-10',color:'#1A5AAA'},
+  {dept:'service',title:'Wine Cellar คุณสมชาย', start:'2026-06-05',end:'2026-06-12',color:'#2878CC'},
+  {dept:'service',title:'PM สุขุมวิท',           start:'2026-06-03',end:'2026-06-03',color:'#34A853'},
+  {dept:'sales',  title:'Villa Asoke',           start:'2026-06-02',end:'2026-06-05',color:'#C8920A'},
+  {dept:'sales',  title:'Project บางนา',         start:'2026-06-07',end:'2026-06-09',color:'#D4A020'},
+  {dept:'sales',  title:'คุณต้น บางนา',         start:'2026-06-01',end:'2026-06-01',color:'#C8920A'},
+  {dept:'sales',  title:'มาร์เก็ต เปิดขาย',     start:'2026-06-06',end:'2026-06-06',color:'#B87020'},
+];
+
+// ── HELPERS ──────────────────────────────────────────────────
+function toKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+function parseDate(s){const[y,m,dd]=s.split('-').map(Number);return new Date(y,m-1,dd)}
+function fmtShort(d){return `${d.getDate()} ${THMON[d.getMonth()]}`}
+function startOfWeek(d){const x=new Date(d);x.setDate(x.getDate()-x.getDay());x.setHours(0,0,0,0);return x}
+function evColor(e){return e.dept==='sales'?'#C8920A':'#1A5AAA'}
+
+// ── STATE ──────────────────────────────────────────────────────
+// อ่าน date จาก URL — รองรับทั้ง ?date=YYYY-MM-DD ตรงๆ และแบบที่ LINE ห่อไว้ใน ?liff.state=?date=...
+function getDateParam(){
+  const sp=new URLSearchParams(location.search);
+  // 1) แบบตรง ?date=
+  let d=sp.get('date');
+  if(d)return d;
+  // 2) แบบ LINE ห่อใน liff.state (เช่น ?liff.state=%3Fdate%3D2026-06-02)
+  let st=sp.get('liff.state');
+  if(st){
+    try{ st=decodeURIComponent(st); }catch(e){}
+    const m=st.match(/date=(\d{4}-\d{2}-\d{2})/);
+    if(m)return m[1];
+  }
+  // 3) เผื่อ date ติดอยู่ใน hash
+  const hm=location.hash.match(/date=(\d{4}-\d{2}-\d{2})/);
+  if(hm)return hm[1];
+  return null;
+}
+const urlDate=getDateParam();
+let today=urlDate?parseDate(urlDate):new Date();today.setHours(0,0,0,0);
+let selDate=new Date(today);
+let view='week'; // day | week | month
+let viewDate=new Date(today); // anchor date
+let ganttFilter='all';
+let fullWeekStart=startOfWeek(today);
+const DAY_W=46,LBL_W=130;
+
+// ── RENDER ────────────────────────────────────────────────────
+function render(){
+  updatePeriod();
+  buildDowHeader();
+  if(view==='month')renderMonth();
+  else if(view==='week')renderWeek();
+  else renderDay();
+}
+
+function updatePeriod(){
+  const p=document.getElementById('nav-period');
+  if(view==='month'){
+    p.textContent=`${THMON_FULL[viewDate.getMonth()]} ${viewDate.getFullYear()}`;
+  } else if(view==='week'){
+    const ws=startOfWeek(viewDate);
+    const we=addDays(ws,6);
+    if(ws.getMonth()===we.getMonth())
+      p.textContent=`${ws.getDate()}–${we.getDate()} ${THMON[ws.getMonth()]} ${ws.getFullYear()}`;
+    else
+      p.textContent=`${fmtShort(ws)} – ${fmtShort(we)} ${ws.getFullYear()}`;
+  } else {
+    const d=selDate;
+    p.textContent=`${THDAY[d.getDay()]} ${d.getDate()} ${THMON[d.getMonth()]} ${d.getFullYear()}`;
+  }
+}
+
+function buildDowHeader(){
+  const dh=document.getElementById('dow-header');
+  if(view==='day'){dh.innerHTML='';dh.style.display='none';return;}
+  dh.style.display='grid';
+  dh.innerHTML=THDAY.map((d,i)=>`<div class="dow-h${i===0||i===6?' red':''}">${d}</div>`).join('');
+}
+
+// ── MONTH ─────────────────────────────────────────────────────
+function renderMonth(){
+  const body=document.getElementById('cal-body');
+  const y=viewDate.getFullYear(),m=viewDate.getMonth();
+  const first=new Date(y,m,1);
+  const pad=first.getDay();
+  const dim=new Date(y,m+1,0).getDate();
+  const prevDim=new Date(y,m,0).getDate();
+
+  let html='<div class="month-grid">';
+  for(let i=pad-1;i>=0;i--){
+    const d=new Date(y,m-1,prevDim-i);
+    html+=monthCell(d,true);
+  }
+  for(let d=1;d<=dim;d++) html+=monthCell(new Date(y,m,d),false);
+  const total=pad+dim;
+  const rem=(7-total%7)%7;
+  for(let d=1;d<=rem;d++) html+=monthCell(new Date(y,m+1,d),true);
+  html+='</div>';
+  body.innerHTML=html;
+  body.querySelectorAll('.m-day').forEach(el=>{
+    el.onclick=()=>{
+      selDate=parseDate(el.dataset.key);
+      body.querySelectorAll('.m-day').forEach(e=>e.classList.remove('selected'));
+      el.classList.add('selected');
+    };
+  });
+}
+
+function monthCell(d,other){
+  const key=toKey(d);
+  const evs=EVENTS[key]||[];
+  const isToday=toKey(d)===toKey(today);
+  const isSel=toKey(d)===toKey(selDate);
+  const wknd=d.getDay()===0||d.getDay()===6;
+  const cls=['m-day',other?'other-month':'',isToday?'is-today':'',isSel?'selected':'',wknd?'weekend':''].filter(Boolean).join(' ');
+  const maxShow=2;
+  const shown=evs.slice(0,maxShow);
+  const more=evs.length-maxShow;
+  const evHtml=shown.map(e=>`<span class="m-ev" style="background:${evColor(e)}">${e.title}</span>`).join('');
+  const moreHtml=more>0?`<span class="m-more">+${more} เพิ่มเติม</span>`:'';
+  return `<div class="${cls}" data-key="${key}"><div class="m-num">${d.getDate()}</div>${evHtml}${moreHtml}</div>`;
+}
+
+// ── WEEK ──────────────────────────────────────────────────────
+function renderWeek(){
+  const ws=startOfWeek(viewDate);
+  const days=Array.from({length:7},(_,i)=>addDays(ws,i));
+  const body=document.getElementById('cal-body');
+
+  // Week grid
+  let weekHtml='<div class="week-grid">';
+  days.forEach(d=>{
+    const key=toKey(d);
+    const evs=EVENTS[key]||[];
+    const isToday=toKey(d)===toKey(today);
+    const isSel=toKey(d)===toKey(selDate);
+    const wknd=d.getDay()===0||d.getDay()===6;
+    const cls=['w-day',isToday?'is-today':'',isSel?'selected':'',wknd?'weekend':''].filter(Boolean).join(' ');
+    const maxShow=3;
+    const shown=evs.slice(0,maxShow);
+    const more=evs.length-maxShow;
+    const evHtml=shown.map(e=>`<span class="w-ev" style="background:${evColor(e)}">${e.title}</span>`).join('');
+    const moreHtml=more>0?`<div class="w-more">+${more}</div>`:'';
+    weekHtml+=`<div class="${cls}" data-key="${key}" onclick="selectWeekDay(this,'${key}')">
+      <div class="w-num">${d.getDate()}</div>
+      ${evHtml}${moreHtml}
+    </div>`;
+  });
+  weekHtml+='</div>';
+
+  // Events for selected day
+  weekHtml+=`<div id="week-events">${buildDayEventsHTML(selDate)}</div>`;
+  weekHtml+=buildGanttSection();
+
+  body.innerHTML=weekHtml;
+  triggerGantt();
+}
+
+function selectWeekDay(el,key){
+  selDate=parseDate(key);
+  document.querySelectorAll('.w-day').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('week-events').innerHTML=buildDayEventsHTML(selDate);
+  updatePeriod();
+}
+
+function buildDayEventsHTML(d){
+  const key=toKey(d);
+  const items=EVENTS[key]||[];
+  const sales=items.filter(e=>e.dept==='sales');
+  const svc=items.filter(e=>e.dept==='service');
+  const isToday=toKey(d)===toKey(today);
+  const label=`${THDAY[d.getDay()]} ${d.getDate()} ${THMON[d.getMonth()]}${isToday?' · วันนี้':''}`;
+  const countBadge=items.length>0?`<span class="day-ev-count">${items.length} งาน</span>`:'';
+
+  let html=`<div id="day-events-header"><span class="day-ev-label">${label}</span>${countBadge}</div>`;
+
+  if(!items.length){
+    html+=`<div class="empty-state"><div class="empty-line"></div><div style="font-size:12.5px;font-weight:700;color:var(--muted)">ไม่มีกิจกรรม</div></div>`;
+    return html;
+  }
+
+  let delay=0;
+  const appendSec=(list,isSales)=>{
+    if(!list.length)return;
+    const dot=isSales?'#C8920A':'#1A5AAA';
+    const txt=isSales?'#7A5C10':'#1A4A7A';
+    const bg=isSales?'#FDF8EE':'#EBF3FF';
+    const lbl=isSales?'SALES & MEETINGS':'SERVICE & OPERATIONS';
+    html+=`<div class="sec-row"><div class="sec-bar" style="background:${dot}"></div><span class="sec-text" style="color:${txt}">${lbl}</span><span class="sec-cnt" style="color:${txt};background:${bg}">${list.length}</span></div>`;
+    list.forEach(item=>{
+      const techStr=item.tech&&item.tech.length?item.tech.join(', '):'';
+      const tagColor=isSales?'#C8920A':'#1A5AAA';
+      html+=`<div class="job-card" style="animation-delay:${delay}ms">
+        <div class="card-title">${item.title}</div>
+        <div class="card-row2"><span class="card-loc">${item.loc||'—'}</span><span class="card-time">${item.time||''}</span></div>
+        ${techStr?`<div class="card-tags"><span class="tag" style="background:${tagColor}">${techStr}</span></div>`:''}
+      </div>`;
+      delay+=30;
+    });
+  };
+
+  appendSec(sales,true);
+  if(sales.length&&svc.length)html+=`<div class="sec-div"></div>`;
+  appendSec(svc,false);
+  return html;
+}
+
+// ── DAY ───────────────────────────────────────────────────────
+function renderDay(){
+  const body=document.getElementById('cal-body');
+  body.innerHTML=`<div id="day-view">
+    ${buildDayEventsHTML(selDate)}
+    ${buildGanttSection()}
+  </div>`;
+  triggerGantt();
+}
+
+// ── GANTT SECTION HTML ────────────────────────────────────────
+let miniWeekStart=startOfWeek(today);
+
+function buildGanttSection(){
+  return `<div id="gantt-section">
+    <div class="gantt-hdr">
+      <div class="gantt-title-row">
+        <div class="sec-bar" style="background:var(--primary)"></div>
+        <span class="sec-text">Gantt สัปดาห์นี้</span>
+      </div>
+      <div style="display:flex;gap:4px;align-items:center">
+        <button class="nav-btn" onclick="shiftMiniWeek(-1)" style="font-size:12px">‹</button>
+        <span id="mini-wlabel" style="font-size:10.5px;font-weight:600;color:var(--muted);min-width:95px;text-align:center">—</span>
+        <button class="nav-btn" onclick="shiftMiniWeek(1)" style="font-size:12px">›</button>
+      </div>
+    </div>
+    <div class="gantt-card">
+      <div class="g-scroll"><div id="mini-gantt" class="g-inner"></div></div>
+    </div>
+    <div class="full-gantt-btn" onclick="openGantt()">
+      ดู Gantt ทั้งหมด <span style="font-size:13px;color:var(--muted)">→</span>
+    </div>
+  </div>`;
+}
+
+function triggerGantt(){
+  renderMiniGantt();
+  const sec=document.getElementById('gantt-section');
+  if(!sec)return;
+  sec.classList.remove('vis');
+  const obs=new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting){sec.classList.add('vis');obs.disconnect();}
+  },{threshold:.05});
+  obs.observe(sec);
+  setTimeout(()=>{if(sec)sec.classList.add('vis');},600);
+}
+
+function shiftMiniWeek(dir){miniWeekStart=addDays(miniWeekStart,dir*7);renderMiniGantt();}
+
+function renderMiniGantt(){
+  const el=document.getElementById('mini-gantt');
+  const lbl=document.getElementById('mini-wlabel');
+  if(!el||!lbl)return;
+  buildGanttInto(el,lbl,miniWeekStart,14,DAY_W,'all',LBL_W);
+}
+
+// ── NAV ───────────────────────────────────────────────────────
+function navPrev(){
+  if(view==='month'){viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth()-1,1);}
+  else if(view==='week'){viewDate=addDays(startOfWeek(viewDate),-7);}
+  else {selDate=addDays(selDate,-1);viewDate=new Date(selDate);}
+  render();
+}
+function navNext(){
+  if(view==='month'){viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth()+1,1);}
+  else if(view==='week'){viewDate=addDays(startOfWeek(viewDate),7);}
+  else {selDate=addDays(selDate,1);viewDate=new Date(selDate);}
+  render();
+}
+function goToday(){
+  selDate=new Date(today);viewDate=new Date(today);
+  render();
+}
+function setView(v){
+  view=v;
+  ['day','week','month'].forEach(x=>{
+    document.getElementById('vt-'+x).classList.toggle('active',x===v);
+  });
+  render();
+}
+
+// ── FULL GANTT ────────────────────────────────────────────────
+function openGantt(){
+  const ov=document.getElementById('go-overlay');
+  ov.classList.add('open');
+  // render หลัง overlay เริ่มเปิด (กัน layout ยังไม่พร้อม → หน้าขาว)
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      buildGanttInto(document.getElementById('go-inner'),document.getElementById('full-wlabel'),fullWeekStart,14,54,ganttFilter,140);
+    },60);
+  });
+}
+function closeGantt(){document.getElementById('go-overlay').classList.remove('open');}
+function shiftFullWeek(dir){fullWeekStart=addDays(fullWeekStart,dir*7);buildGanttInto(document.getElementById('go-inner'),document.getElementById('full-wlabel'),fullWeekStart,14,54,ganttFilter,140);}
+function setGF(f){
+  ganttFilter=f;
+  [{id:'gof-all',c:'all'},{id:'gof-service',c:'service'},{id:'gof-sales',c:'sales'}].forEach(({id,c})=>{
+    const btn=document.getElementById(id);if(!btn)return;
+    if(c==='all'){btn.style.background=f==='all'?'var(--primary)':'var(--bg)';btn.style.color=f==='all'?'#fff':'var(--muted)'}
+    if(c==='service'){btn.style.background=f==='service'?'var(--svc)':'var(--svc-light)';btn.style.color=f==='service'?'#fff':'var(--svc)'}
+    if(c==='sales'){btn.style.background=f==='sales'?'var(--sales)':'var(--sales-light)';btn.style.color=f==='sales'?'#fff':'var(--sales)'}
+  });
+  buildGanttInto(document.getElementById('go-inner'),document.getElementById('full-wlabel'),fullWeekStart,14,54,f,140);
+}
+
+function buildGanttInto(el,lblEl,ws,numDays,dw,filter,lblW){
+  if(!el||!lblEl)return;
+  const we=addDays(ws,numDays-1);
+  lblEl.textContent=`${fmtShort(ws)} – ${fmtShort(we)}`;
+  const days=Array.from({length:numDays},(_,i)=>addDays(ws,i));
+  const todayKey=toKey(today);
+  const wsTime=ws.getTime(), weTime=we.getTime();
+  const jobs=GANTT_JOBS
+    .filter(j=>filter==='all'||j.dept===filter)
+    // เฉพาะงานที่ช่วงงาน [start,end] ทับกับช่วงที่กำลังแสดง [ws,we]
+    .filter(j=>{
+      const js=parseDate(j.start).getTime(), je=parseDate(j.end).getTime();
+      return je>=wsTime && js<=weTime;
+    })
+    // เรียงตามวันเริ่ม (เร็ว→ช้า) ถ้าเริ่มวันเดียวกันเรียงตามวันจบ
+    .sort((a,b)=>{
+      const d=parseDate(a.start)-parseDate(b.start);
+      return d!==0?d:(parseDate(a.end)-parseDate(b.end));
+    });
+  const totalW=numDays*dw;
+  el.innerHTML='';el.style.minWidth=(lblW+totalW)+'px';el.style.position='relative';
+
+  const hdr=document.createElement('div');hdr.className='gh-row';
+  hdr.innerHTML=`<div class="gh-lbl" style="width:${lblW}px">งาน</div><div style="display:flex;width:${totalW}px">${days.map(d=>{
+    const wknd=d.getDay()===0||d.getDay()===6,isTd=toKey(d)===todayKey;
+    return `<div class="gh-day${wknd?' wknd':''}${isTd?' tdc':''}" style="width:${dw}px"><span class="gd-dow">${THDAY[d.getDay()]}</span><span class="gd-n">${d.getDate()}</span></div>`;
+  }).join('')}</div>`;
+  el.appendChild(hdr);
+
+  const todayOff=(today-ws)/86400000;
+  // render ทุกงานเรียงต่อกัน (เรียงตามวันเริ่มแล้ว) ไม่แยก section — แยกแค่สีของ bar
+  const renderRows=(list)=>{
+    list.forEach(job=>{
+      const js=parseDate(job.start),je=parseDate(job.end);
+      const s=Math.max(0,Math.round((js-ws)/86400000));
+      const e=Math.min(numDays,Math.round((je-ws)/86400000)+1);
+      const span=Math.max(0,e-s);
+      const row=document.createElement('div');row.className='g-data-row';
+      const cols=days.map((d,ci)=>{const wknd=d.getDay()===0||d.getDay()===6,isTd=toKey(d)===todayKey;return `<div class="g-col${wknd?' wknd':''}${isTd?' tdc':''}" style="left:${ci*dw}px;width:${dw}px"></div>`;}).join('');
+      const bar=span>0?`<div class="g-bar" style="left:${s*dw+2}px;width:${span*dw-4}px;background:${job.color}"><span class="g-bar-txt">${job.title}</span></div>`:'';
+      row.innerHTML=`<div class="g-lbl" style="width:${lblW}px">${job.title}</div><div class="g-grid" style="width:${totalW}px">${cols}${bar}</div>`;
+      el.appendChild(row);
+    });
+  };
+  renderRows(jobs);
+
+  // ไม่มีงานในช่วงนี้ → แสดงข้อความ กันหน้าขาวเปล่า
+  if(!jobs.length){
+    const empty=document.createElement('div');
+    empty.style.cssText='padding:30px 16px;text-align:center;color:#8A9AB0;font-size:13px';
+    empty.textContent='ไม่มีงานในช่วงเวลานี้';
+    el.appendChild(empty);
+  }
+
+  if(todayOff>=0&&todayOff<numDays){
+    const tl=document.createElement('div');tl.className='today-vline';
+    tl.style.left=`${lblW+todayOff*dw+dw/2}px`;
+    el.appendChild(tl);
+    const wrap=el.closest('.g-scroll')||document.getElementById('go-scroll');
+    if(wrap)setTimeout(()=>{wrap.scrollLeft=Math.max(0,lblW+todayOff*dw+dw/2-wrap.clientWidth/2);},80);
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+// 👇 ใส่ Apps Script Web App URL (ลงท้าย /exec) — ตัวเดียวกับที่ deploy เป็น webhook
+const API_URL = 'https://script.google.com/macros/s/AKfycbwKH3Lm9GwN35tG44AVqxHeCwyxA_hzz0fKiInzAp_GbtmCWbUHm3iT5sM_lkHmfVTD/exec';
+
+// แสดง overlay โหลดชั่วคราว
+function showLoading(on){
+  let el=document.getElementById('liff-loading');
+  if(on){
+    if(!el){
+      el=document.createElement('div');
+      el.id='liff-loading';
+      el.style.cssText='position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(244,246,249,.85);font-family:var(--font);font-size:13px;color:#8A9AB0;font-weight:600';
+      el.textContent='กำลังโหลดข้อมูล…';
+      document.body.appendChild(el);
+    }
+  } else if(el){ el.remove(); }
+}
+
+// ดึงข้อมูลจริงจาก Apps Script แล้วเขียนทับ EVENTS / GANTT_JOBS
+async function loadRealData(){
+  if(!API_URL || API_URL==='YOUR_APPS_SCRIPT_EXEC_URL') return; // ยังไม่ใส่ URL → ใช้ hardcoded
+  const dateStr=toKey(today);
+  const url=`${API_URL}?date=${dateStr}`;
+  try{
+    showLoading(true);
+    console.log('[LIFF] fetching:',url);
+    const res=await fetch(url,{method:'GET',redirect:'follow'});
+    console.log('[LIFF] status:',res.status,'type:',res.type);
+    // ดึงเป็น text ก่อน แล้ว parse เอง (กัน content-type/redirect ทำให้ .json() พัง)
+    const raw=await res.text();
+    let data;
+    try{ data=JSON.parse(raw); }
+    catch(parseErr){
+      console.error('[LIFF] parse JSON ไม่ได้ ได้ข้อมูล:',raw.slice(0,200));
+      return; // ใช้ข้อมูลเก่าต่อ
+    }
+    console.log('[LIFF] got data, byDate keys:',data.byDate?Object.keys(data.byDate).length:0,'gantt:',data.gantt?data.gantt.length:0);
+    if(data && data.status==='ok'){
+      if(data.byDate && Object.keys(data.byDate).length) EVENTS=data.byDate;
+      if(data.gantt && data.gantt.length)               GANTT_JOBS=data.gantt;
+      render(); // re-render ด้วยข้อมูลจริง
+      console.log('[LIFF] ✅ render ด้วยข้อมูลจริงแล้ว');
+    }
+  }catch(err){
+    console.error('[LIFF] โหลดข้อมูลจริงไม่สำเร็จ ใช้ข้อมูลตัวอย่างแทน:',err);
+  }finally{
+    showLoading(false);
+  }
+}
+
+render();                 // render ครั้งแรกด้วย hardcoded (เห็นทันที ไม่รอ fetch)
+loadRealData();           // แล้วดึงของจริงมาทับ
+if(typeof liff!=='undefined')liff.init({liffId:'2010252276-9Pqp6Koj'}).catch(()=>{});
+
+function closeLIFF(){
+  if(typeof liff!=='undefined'&&liff.isInClient()){
+    liff.closeWindow();
+  } else {
+    window.history.back();
+  }
+}
+</script>
+</body>
 </html>
