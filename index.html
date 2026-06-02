@@ -314,7 +314,25 @@ function startOfWeek(d){const x=new Date(d);x.setDate(x.getDate()-x.getDay());x.
 function evColor(e){return e.dept==='sales'?'#C8920A':'#1A5AAA'}
 
 // ── STATE ──────────────────────────────────────────────────────
-const urlDate=new URLSearchParams(location.search).get('date');
+// อ่าน date จาก URL — รองรับทั้ง ?date=YYYY-MM-DD ตรงๆ และแบบที่ LINE ห่อไว้ใน ?liff.state=?date=...
+function getDateParam(){
+  const sp=new URLSearchParams(location.search);
+  // 1) แบบตรง ?date=
+  let d=sp.get('date');
+  if(d)return d;
+  // 2) แบบ LINE ห่อใน liff.state (เช่น ?liff.state=%3Fdate%3D2026-06-02)
+  let st=sp.get('liff.state');
+  if(st){
+    try{ st=decodeURIComponent(st); }catch(e){}
+    const m=st.match(/date=(\d{4}-\d{2}-\d{2})/);
+    if(m)return m[1];
+  }
+  // 3) เผื่อ date ติดอยู่ใน hash
+  const hm=location.hash.match(/date=(\d{4}-\d{2}-\d{2})/);
+  if(hm)return hm[1];
+  return null;
+}
+const urlDate=getDateParam();
 let today=urlDate?parseDate(urlDate):new Date();today.setHours(0,0,0,0);
 let selDate=new Date(today);
 let view='week'; // day | week | month
