@@ -647,7 +647,7 @@ function buildGanttInto(el,lblEl,ws,numDays,dw,filter,lblW){
 
 // ── INIT ──────────────────────────────────────────────────────
 // 👇 ใส่ Apps Script Web App URL (ลงท้าย /exec) — ตัวเดียวกับที่ deploy เป็น webhook
-const API_URL = 'https://script.google.com/macros/s/AKfycbwKH3Lm9GwN35tG44AVqxHeCwyxA_hzz0fKiInzAp_GbtmCWbUHm3iT5sM_lkHmfVTD/exec';
+const API_URL = 'YOUR_APPS_SCRIPT_EXEC_URL';
 
 // แสดง overlay โหลดชั่วคราว
 function showLoading(on){
@@ -667,17 +667,29 @@ function showLoading(on){
 async function loadRealData(){
   if(!API_URL || API_URL==='YOUR_APPS_SCRIPT_EXEC_URL') return; // ยังไม่ใส่ URL → ใช้ hardcoded
   const dateStr=toKey(today);
+  const url=`${API_URL}?date=${dateStr}`;
   try{
     showLoading(true);
-    const res=await fetch(`${API_URL}?date=${dateStr}`,{method:'GET',redirect:'follow'});
-    const data=await res.json();
+    console.log('[LIFF] fetching:',url);
+    const res=await fetch(url,{method:'GET',redirect:'follow'});
+    console.log('[LIFF] status:',res.status,'type:',res.type);
+    // ดึงเป็น text ก่อน แล้ว parse เอง (กัน content-type/redirect ทำให้ .json() พัง)
+    const raw=await res.text();
+    let data;
+    try{ data=JSON.parse(raw); }
+    catch(parseErr){
+      console.error('[LIFF] parse JSON ไม่ได้ ได้ข้อมูล:',raw.slice(0,200));
+      return; // ใช้ข้อมูลเก่าต่อ
+    }
+    console.log('[LIFF] got data, byDate keys:',data.byDate?Object.keys(data.byDate).length:0,'gantt:',data.gantt?data.gantt.length:0);
     if(data && data.status==='ok'){
       if(data.byDate && Object.keys(data.byDate).length) EVENTS=data.byDate;
       if(data.gantt && data.gantt.length)               GANTT_JOBS=data.gantt;
       render(); // re-render ด้วยข้อมูลจริง
+      console.log('[LIFF] ✅ render ด้วยข้อมูลจริงแล้ว');
     }
   }catch(err){
-    console.error('โหลดข้อมูลจริงไม่สำเร็จ ใช้ข้อมูลตัวอย่างแทน:',err);
+    console.error('[LIFF] โหลดข้อมูลจริงไม่สำเร็จ ใช้ข้อมูลตัวอย่างแทน:',err);
   }finally{
     showLoading(false);
   }
@@ -685,7 +697,7 @@ async function loadRealData(){
 
 render();                 // render ครั้งแรกด้วย hardcoded (เห็นทันที ไม่รอ fetch)
 loadRealData();           // แล้วดึงของจริงมาทับ
-if(typeof liff!=='undefined')liff.init({liffId:'2010252276-9Pqp6Koj'}).catch(()=>{});
+if(typeof liff!=='undefined')liff.init({liffId:'YOUR_LIFF_ID'}).catch(()=>{});
 
 function closeLIFF(){
   if(typeof liff!=='undefined'&&liff.isInClient()){
