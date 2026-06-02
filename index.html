@@ -638,11 +638,8 @@ function buildGanttInto(el,lblEl,ws,numDays,dw,filter,lblW){
   el.appendChild(hdr);
 
   const todayOff=(today-ws)/86400000;
-  const renderSec=(list,lbl)=>{
-    if(!list.length)return;
-    const sr=document.createElement('div');sr.className='g-sec-row';
-    sr.innerHTML=`<div class="g-sec-lbl" style="width:${lblW}px">${lbl}</div><div style="flex:1;height:26px;background:#F8FAFC"></div>`;
-    el.appendChild(sr);
+  // render ทุกงานเรียงต่อกัน (เรียงตามวันเริ่มแล้ว) ไม่แยก section — แยกแค่สีของ bar
+  const renderRows=(list)=>{
     list.forEach(job=>{
       const js=parseDate(job.start),je=parseDate(job.end);
       const s=Math.max(0,Math.round((js-ws)/86400000));
@@ -655,8 +652,7 @@ function buildGanttInto(el,lblEl,ws,numDays,dw,filter,lblW){
       el.appendChild(row);
     });
   };
-  renderSec(jobs.filter(j=>j.dept==='service'),'SERVICE');
-  renderSec(jobs.filter(j=>j.dept==='sales'),'SALES');
+  renderRows(jobs);
 
   // ไม่มีงานในช่วงนี้ → แสดงข้อความ กันหน้าขาวเปล่า
   if(!jobs.length){
@@ -727,7 +723,7 @@ async function loadRealData(){
 
 render();                 // render ครั้งแรกด้วย hardcoded (เห็นทันที ไม่รอ fetch)
 loadRealData();           // แล้วดึงของจริงมาทับ
-if(typeof liff!=='undefined')liff.init({liffId:'YOUR_LIFF_ID'}).catch(()=>{});
+if(typeof liff!=='undefined')liff.init({liffId:'2010252276-9Pqp6Koj'}).catch(()=>{});
 
 function closeLIFF(){
   if(typeof liff!=='undefined'&&liff.isInClient()){
