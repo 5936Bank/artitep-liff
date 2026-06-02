@@ -596,7 +596,19 @@ function buildGanttInto(el,lblEl,ws,numDays,dw,filter,lblW){
   lblEl.textContent=`${fmtShort(ws)} – ${fmtShort(we)}`;
   const days=Array.from({length:numDays},(_,i)=>addDays(ws,i));
   const todayKey=toKey(today);
-  const jobs=GANTT_JOBS.filter(j=>filter==='all'||j.dept===filter);
+  const wsTime=ws.getTime(), weTime=we.getTime();
+  const jobs=GANTT_JOBS
+    .filter(j=>filter==='all'||j.dept===filter)
+    // เฉพาะงานที่ช่วงงาน [start,end] ทับกับช่วงที่กำลังแสดง [ws,we]
+    .filter(j=>{
+      const js=parseDate(j.start).getTime(), je=parseDate(j.end).getTime();
+      return je>=wsTime && js<=weTime;
+    })
+    // เรียงตามวันเริ่ม (เร็ว→ช้า) ถ้าเริ่มวันเดียวกันเรียงตามวันจบ
+    .sort((a,b)=>{
+      const d=parseDate(a.start)-parseDate(b.start);
+      return d!==0?d:(parseDate(a.end)-parseDate(b.end));
+    });
   const totalW=numDays*dw;
   el.innerHTML='';el.style.minWidth=(lblW+totalW)+'px';el.style.position='relative';
 
