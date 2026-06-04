@@ -622,15 +622,17 @@ function buildGanttInto(el,lblEl,ws,numDays,dw,filter,lblW){
       const js=parseDate(j.start).getTime(), je=parseDate(j.end).getTime();
       return je>=wsTime && js<=weTime;
     })
-    // เรียง: ใช้ "วันเริ่มที่มองเห็น" = max(วันเริ่มจริง, วันนี้)
-    //   งานที่ active วันนี้ (เริ่มก่อนหรือเริ่มวันนี้ และยังไม่จบ) → เด้งขึ้นบนสุด เรียงตามวันนี้
-    //   งานวันถัดไป → ไล่ลงล่างตามวันเริ่ม
+    // เรียง 2 กลุ่ม:
+    //   กลุ่ม A = งาน active วันนี้ (วันนี้อยู่ในช่วง start..end) → เด้งขึ้นบนสุด
+    //   กลุ่ม B = งานอื่น (ก่อน/หลังวันนี้) → เรียงตามวันเริ่มปกติ ต่อท้าย
     .sort((a,b)=>{
       const todayT=today.getTime();
-      const effA=Math.max(parseDate(a.start).getTime(),todayT);
-      const effB=Math.max(parseDate(b.start).getTime(),todayT);
-      if(effA!==effB)return effA-effB;            // วันที่มองเห็นเริ่ม เร็ว→ช้า (วันนี้อยู่บน)
-      return parseDate(a.end)-parseDate(b.end);   // วันเดียวกัน เรียงตามวันจบ
+      const aActive=(parseDate(a.start).getTime()<=todayT && parseDate(a.end).getTime()>=todayT);
+      const bActive=(parseDate(b.start).getTime()<=todayT && parseDate(b.end).getTime()>=todayT);
+      if(aActive!==bActive)return aActive?-1:1;   // active วันนี้ขึ้นก่อนเสมอ
+      // ภายในกลุ่มเดียวกัน เรียงตามวันเริ่ม แล้วตามวันจบ
+      const d=parseDate(a.start)-parseDate(b.start);
+      return d!==0?d:(parseDate(a.end)-parseDate(b.end));
     });
   const totalW=numDays*dw;
   el.innerHTML='';el.style.minWidth=(lblW+totalW)+'px';el.style.position='relative';
